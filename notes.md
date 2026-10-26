@@ -66,3 +66,15 @@ A dated log of what we tried and what broke (the PDF asks for this). Add to it e
 - Browsers send localhost cookies to every port, so both tenants would have overwritten one cookie. Fix: a different cookie name per tenant.
 - `npm audit` warns about `body-parser` (comes with Express). `npm audit fix` in `server/` should fix it.
 - The backend `/chat` and `/feedback` don't check the login yet (the Chat page still uses fake replies).
+
+**Later the same day: getting ready for hosting**
+- Plan: Vercel (two projects, one per tenant) + Render (mock router + one backend per tenant, from `render.yaml`) + Turso (one database per tenant).
+- Picked Turso over Supabase: it's SQLite in the cloud, so the SQL in `auth.js` barely changed. Added `@libsql/client`. Locally it still opens `server/data/*.db` (via `DB_PATH`). When `DB_URL` is set, it uses Turso.
+- The browser now calls `/api/...` for the backend. Vite (local) and `client/api/proxy.js` (Vercel) remove the `/api` and pass it to the tenant's backend. This also fixed the clash between the backend's `POST /chat` and the React `/chat` page.
+- Mock router: hosted keys come from Render (`MOCK_KEY_TENANT_A/B`, random). The local keys are public in the repo, so they're refused when `NODE_ENV=production`.
+- Added `/health` to the backend and mock router, and "School demo: please don't use a real password." on the Signup page.
+- Tested locally: signup, duplicate email, wrong password, login, logout, Tenant A's login rejected on Tenant B, chat through the mock router, the proxy passing the cookie, and both production safety checks.
+
+**Watch out**
+- Render's free disk is wiped on restart, so a hosted backend refuses to start without `DB_URL`.
+- Render free services sleep after ~15 min. The first request can take up to a minute (the proxy waits up to 60 s).

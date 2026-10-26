@@ -1,22 +1,31 @@
 // server/auth.js
-// Accounts and login for ONE tenant. Each backend opens only its own SQLite file
-// (DB_PATH in .env.tenantA / .env.tenantB), so Tenant A and Tenant B never share accounts.
+// Accounts and login for ONE tenant. Each backend opens only its own database, so
+// Tenant A and Tenant B never share accounts:
+// - On this computer: a SQLite file (DB_PATH in .env.tenantA / .env.tenantB).
+// - When hosted: its own Turso database (DB_URL + DB_AUTH_TOKEN, set in the Render dashboard).
 // - Passwords are hashed with bcrypt. The plain password is never stored.
 // - A login creates a random session token. The browser keeps it in an httpOnly
 //   cookie (JavaScript can't read it). The database only keeps a hash of the token.
-import { DatabaseSync } from "node:sqlite";
+import { createClient } from "@libsql/client";
 import { mkdirSync } from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import express from "express";
 import bcrypt from "bcryptjs";
 
 const TENANT_ID = process.env.TENANT_ID;
 const DB_PATH = process.env.DB_PATH;
+const DB_URL = process.env.DB_URL; // e.g. libsql://bagwis-accounts-yourname.turso.io
 
-if (!TENANT_ID || !DB_PATH) {
-  console.error("TENANT_ID or DB_PATH is missing. Did you start with --env-file?");
+if (!TENANT_ID || (!DB_URL && !DB_PATH)) {
+  console.error("TENANT_ID, or DB_URL / DB_PATH, is missing. Did you start with --env-file?");
+  process.exit(1);
+}
+
+// Render's disk is wiped on every restart, so a hosted backend must use Turso, not a file.
+if (process.env.NODE_ENV === "production" && !DB_URL) {
+  console.error("DB_URL is missing. Hosted backends need a Turso database (see README).");
   process.exit(1);
 }
 
@@ -32,15 +41,33 @@ const COOKIE_OPTIONS = {
   path: "/",
 };
 
-// ---------- Database (one file per tenant) ----------
+// ---------- Database (one per tenant) ----------
 
-// DB_PATH is relative to the server/ folder, e.g. data/tenantA.db
-const serverDir = path.dirname(fileURLToPath(import.meta.url));
-const dbFile = path.resolve(serverDir, DB_PATH);
-mkdirSync(path.dirname(dbFile), { recursive: true });
-const db = new DatabaseSync(dbFile);
+let dbName;
+let db;
+if (DB_URL) {
+  // Turso: the token only opens THIS tenant's database.
+  dbName = DB_URL;
+  db = createClient({ url: DB_URL, authToken: process.env.DB_AUTH_TOKEN });
+} else {
+  // Local file. DB_PATH is relative to the server/ folder, e.g. data/tenantA.db
+  const serverDir = path.dirname(fileURLToPath(import.meta.url));
+  dbName = path.resolve(serverDir, DB_PATH);
+  mkdirSync(path.dirname(dbName), { recursive: true });
+  db = createClient({ url: pathToFileURL(dbName).href });
+}
 
-db.exec(`
+// Runs one SQL statement. Returns the first row (or undefined).
+async function getRow(sql, ...args) {
+  const result = await db.execute({ sql, args });
+  return result.rows[0];
+}
+
+async function run(sql, ...args) {
+  await db.execute({ sql, args });
+}
+
+await db.executeMultiple(`
   CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id     TEXT NOT NULL,
@@ -58,33 +85,38 @@ db.exec(`
   );
 `);
 
-// Safety net: refuse to start if this file holds another tenant's accounts
-// (for example, both .env files pointing at the same DB_PATH by mistake).
-const foreign = db.prepare("SELECT tenant_id FROM users WHERE tenant_id != ? LIMIT 1").get(TENANT_ID);
+// Safety net: refuse to start if this database holds another tenant's accounts
+// (for example, both tenants pointing at the same DB_PATH or DB_URL by mistake).
+const foreign = await getRow("SELECT tenant_id FROM users WHERE tenant_id != ? LIMIT 1", TENANT_ID);
 if (foreign) {
-  console.error(`${dbFile} has accounts for ${foreign.tenant_id}, not ${TENANT_ID}. Check DB_PATH.`);
+  console.error(`${dbName} has accounts for ${foreign.tenant_id}, not ${TENANT_ID}. Check DB_PATH / DB_URL.`);
   process.exit(1);
 }
 
-console.log(`Accounts database for ${TENANT_ID}: ${dbFile}`);
+console.log(`Accounts database for ${TENANT_ID}: ${dbName}`);
 
-// Every query also checks tenant_id, as a second lock on top of the separate files.
-const findUserByEmail = db.prepare(
-  "SELECT id, full_name, email, password_hash FROM users WHERE tenant_id = ? AND email = ?"
+// Every query also checks tenant_id, as a second lock on top of the separate databases.
+const findUserByEmail = (email) => getRow(
+  "SELECT id, full_name, email, password_hash FROM users WHERE tenant_id = ? AND email = ?",
+  TENANT_ID, email
 );
-const insertUser = db.prepare(
-  "INSERT INTO users (tenant_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)"
+const insertUser = (fullName, email, passwordHash) => run(
+  "INSERT INTO users (tenant_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)",
+  TENANT_ID, fullName, email, passwordHash
 );
-const insertSession = db.prepare(
-  "INSERT INTO sessions (token_hash, user_id, tenant_id, expires_at) VALUES (?, ?, ?, ?)"
+const insertSession = (tokenHash, userId, expiresAt) => run(
+  "INSERT INTO sessions (token_hash, user_id, tenant_id, expires_at) VALUES (?, ?, ?, ?)",
+  tokenHash, userId, TENANT_ID, expiresAt
 );
-const findSessionUser = db.prepare(`
+const findSessionUser = (tokenHash) => getRow(`
   SELECT u.full_name, u.email FROM sessions s
   JOIN users u ON u.id = s.user_id
   WHERE s.token_hash = ? AND s.tenant_id = ? AND u.tenant_id = ? AND s.expires_at > ?
-`);
-const deleteSession = db.prepare("DELETE FROM sessions WHERE token_hash = ? AND tenant_id = ?");
-const deleteExpiredSessions = db.prepare("DELETE FROM sessions WHERE expires_at <= ?");
+`, tokenHash, TENANT_ID, TENANT_ID, Date.now());
+const deleteSession = (tokenHash) => run(
+  "DELETE FROM sessions WHERE token_hash = ? AND tenant_id = ?", tokenHash, TENANT_ID
+);
+const deleteExpiredSessions = () => run("DELETE FROM sessions WHERE expires_at <= ?", Date.now());
 
 // Compared against when the email doesn't exist, so a wrong email takes as long as a wrong password.
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", BCRYPT_ROUNDS);
@@ -135,10 +167,10 @@ function readSessionToken(req) {
 }
 
 // The logged-in user for this request ({ name, email }), or null.
-function getSessionUser(req) {
+async function getSessionUser(req) {
   const token = readSessionToken(req);
   if (!token) return null;
-  const row = findSessionUser.get(hashToken(token), TENANT_ID, TENANT_ID, Date.now());
+  const row = await findSessionUser(hashToken(token));
   return row ? { name: row.full_name, email: row.email } : null;
 }
 
@@ -154,11 +186,11 @@ authRouter.post("/signup", async (req, res) => {
   if (Object.keys(errors).length) return res.status(400).json({ errors });
 
   const emailTaken = { email: "An account with this email already exists. Try logging in." };
-  if (findUserByEmail.get(TENANT_ID, fields.email)) return res.status(400).json({ errors: emailTaken });
+  if (await findUserByEmail(fields.email)) return res.status(400).json({ errors: emailTaken });
 
   try {
     const passwordHash = await bcrypt.hash(fields.password, BCRYPT_ROUNDS);
-    insertUser.run(TENANT_ID, fields.fullName, fields.email, passwordHash);
+    await insertUser(fields.fullName, fields.email, passwordHash);
     res.status(201).json({ ok: true });
   } catch (err) {
     // Two sign-ups with the same email at the same moment: the UNIQUE rule catches the second one.
@@ -173,28 +205,28 @@ authRouter.post("/login", async (req, res) => {
   const { email, password } = readFields(req.body);
   if (!email || !password) return res.status(400).json({ error: "Please enter your email and password." });
 
-  const user = findUserByEmail.get(TENANT_ID, email);
+  const user = await findUserByEmail(email);
   const passwordOk = await bcrypt.compare(password, user?.password_hash ?? DUMMY_HASH);
   // Same message for "no such email" and "wrong password", so nobody can test which emails exist.
   if (!user || !passwordOk) return res.status(401).json({ error: "Incorrect email or password." });
 
-  deleteExpiredSessions.run(Date.now());
+  await deleteExpiredSessions();
   const token = crypto.randomBytes(32).toString("hex");
   const maxAge = SESSION_DAYS * 24 * 60 * 60 * 1000;
-  insertSession.run(hashToken(token), user.id, TENANT_ID, Date.now() + maxAge);
+  await insertSession(hashToken(token), user.id, Date.now() + maxAge);
   res.cookie(COOKIE_NAME, token, { ...COOKIE_OPTIONS, maxAge });
   res.json({ user: { name: user.full_name, email: user.email } });
 });
 
 // GET /auth/me  ->  { user } if logged in, otherwise { user: null }
-authRouter.get("/me", (req, res) => {
-  res.json({ user: getSessionUser(req) });
+authRouter.get("/me", async (req, res) => {
+  res.json({ user: await getSessionUser(req) });
 });
 
 // POST /auth/logout  ->  deletes the session and the cookie
-authRouter.post("/logout", (req, res) => {
+authRouter.post("/logout", async (req, res) => {
   const token = readSessionToken(req);
-  if (token) deleteSession.run(hashToken(token), TENANT_ID);
+  if (token) await deleteSession(hashToken(token));
   res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
   res.json({ ok: true });
 });

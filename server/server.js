@@ -39,6 +39,11 @@ async function forwardToRouter(path, body, res) {
   }
 }
 
+// "Am I awake?" check. Render uses it, and you can open it in a browser.
+app.get("/health", (req, res) => {
+  res.json({ ok: true, tenant: process.env.TENANT_ID });
+});
+
 // Branding only. NEVER add the API key here, because the browser can read this.
 app.get("/config", (req, res) => {
   res.json({

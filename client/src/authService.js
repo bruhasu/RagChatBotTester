@@ -1,5 +1,5 @@
 // client/src/authService.js
-// The ONLY file that knows how login works. It talks to OUR backend (/auth/...),
+// The ONLY file that knows how login works. It talks to OUR backend (/api/auth/...),
 // which checks this tenant's own account database.
 // - The password is sent once to log in or sign up, and the backend only stores a hash of it.
 // - The session lives in an httpOnly cookie. JavaScript can't read it, and nothing is
@@ -43,7 +43,7 @@ async function postJson(path, body) {
 // "errors.form" is a message for the whole form (e.g. server down).
 export async function signup(fields) {
   try {
-    const { ok, data } = await postJson("/auth/signup", fields);
+    const { ok, data } = await postJson("/api/auth/signup", fields);
     if (ok) return { ok: true };
     return { ok: false, errors: data.errors ?? { form: data.error ?? NETWORK_ERROR } };
   } catch (err) {
@@ -55,7 +55,7 @@ export async function signup(fields) {
 // Returns { user: { name, email } } or { error: "message" }.
 export async function login(email, password) {
   try {
-    const { ok, data } = await postJson("/auth/login", { email, password });
+    const { ok, data } = await postJson("/api/auth/login", { email, password });
     return ok && data.user ? { user: data.user } : { error: data.error ?? NETWORK_ERROR };
   } catch (err) {
     console.error("Login failed:", err);
@@ -65,7 +65,7 @@ export async function login(email, password) {
 
 export async function logout() {
   try {
-    await postJson("/auth/logout");
+    await postJson("/api/auth/logout");
   } catch (err) {
     console.error("Logout failed:", err);
   }
@@ -74,7 +74,7 @@ export async function logout() {
 // The logged-in user ({ name, email }), or null if nobody is logged in (or the server is down).
 export async function getCurrentUser() {
   try {
-    const res = await fetch("/auth/me");
+    const res = await fetch("/api/auth/me");
     const data = await res.json();
     return data.user ?? null;
   } catch {

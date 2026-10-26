@@ -7,14 +7,31 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-const PORT = 3000;
+// Render picks the port itself (PORT). On this computer it's 3000.
+const PORT = process.env.PORT || 3000;
 
 // The two fake API keys this mock accepts, one per tenant.
 // These must match ROUTER_API_KEY in server/.env.tenantA and server/.env.tenantB.
+// When hosted, the keys come from the Render dashboard (MOCK_KEY_TENANT_A / _B), because
+// the local ones below are public in the GitHub repo.
+const IS_HOSTED = process.env.NODE_ENV === "production";
+const KEY_A = process.env.MOCK_KEY_TENANT_A || (IS_HOSTED ? null : "mock-key-tenant-a-bagwis");
+const KEY_B = process.env.MOCK_KEY_TENANT_B || (IS_HOSTED ? null : "mock-key-tenant-b-kahonko");
+
+if (!KEY_A || !KEY_B) {
+  console.error("MOCK_KEY_TENANT_A or MOCK_KEY_TENANT_B is missing. Set them in the Render dashboard.");
+  process.exit(1);
+}
+
 const TENANTS = {
-  "mock-key-tenant-a-bagwis": { id: "tenantA", name: "Bagwis University Help Desk" },
-  "mock-key-tenant-b-kahonko": { id: "tenantB", name: "KahonKo Gadgets Support" },
+  [KEY_A]: { id: "tenantA", name: "Bagwis University Help Desk" },
+  [KEY_B]: { id: "tenantB", name: "KahonKo Gadgets Support" },
 };
+
+// "Am I awake?" check. Render uses it, and you can open it in a browser.
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 // Checks the x-api-key header. If it's missing or unknown, replies 401 and stops.
 // If it's valid, remembers which tenant is calling (req.tenant) and continues.

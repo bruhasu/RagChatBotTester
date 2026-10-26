@@ -7,10 +7,14 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     port: mode === "tenantB" ? 5174 : 5173,
-    // Send /auth/... (sign up, log in, log out) to THIS tenant's backend only.
-    // The browser sees one address, so the login cookie works without extra setup.
+    // Send /api/... (log in, chat, feedback) to THIS tenant's backend only, without the "/api"
+    // (/api/auth/login -> http://localhost:4000/auth/login). The browser sees one address,
+    // so the login cookie works without extra setup. On Vercel, api/proxy.js does the same job.
     proxy: {
-      "/auth": `http://localhost:${mode === "tenantB" ? 4001 : 4000}`,
+      "/api": {
+        target: `http://localhost:${mode === "tenantB" ? 4001 : 4000}`,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
     },
   },
 }));

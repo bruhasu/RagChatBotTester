@@ -6,3 +6,13 @@
   font-size: 0.8rem;
   opacity: 0.85;
 }
+
+/* "School demo: please don't use a real password." above the form */
+.signup-demo-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--brand-accent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.9rem;
+}

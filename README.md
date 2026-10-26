@@ -52,8 +52,11 @@ The API key only ever lives in the backend. The browser never sees it.
 │       ├── weatherService.js # login page weather (Open-Meteo)
 │       ├── pages/            # Login, Signup, Home, Chat, About (one folder each)
 │       └── components/       # Navbar, Footer, AuthLayout, MessageBubble, TopicGrid, ...
+├── render.yaml               # Render blueprint: mock router + one backend per tenant
+├── client/api/proxy.js       # Vercel only: passes /api/... to the tenant's backend
+├── client/vercel.json        # Vercel settings (rewrites /api/... to the proxy)
 ├── server/                   # Express backend: /config, /chat, /feedback, /auth/...
-│   ├── auth.js               # accounts: SQLite database + bcrypt + login cookie
+│   ├── auth.js               # accounts: SQLite file (local) or Turso (hosted) + bcrypt + login cookie
 │   ├── data/                 # account databases, created on first start (never uploaded)
 │   └── .env.example          # settings template (copy it, see below)
 ├── mock-router/              # fake AI router on port 3000
@@ -133,6 +136,63 @@ curl.exe -X POST http://localhost:4000/chat -H "Content-Type: application/json" 
 ```
 
 You should get a JSON reply with an `answer` and `sources` tagged `tenantA`.
+
+## Host it online (free)
+
+```
+Friend's browser -> Vercel site (Tenant A or B) --/api/...--> Render backend A or B -> Render mock router
+                    one Vercel project per tenant              each with its OWN Turso database
+```
+
+- **Websites:** two Vercel projects from this repo (root folder `client`). `client/api/proxy.js` passes `/api/...` to that tenant's backend, so the site and the API share one address and the login cookie just works.
+- **Backends + mock router:** three free Render services, created from `render.yaml`.
+- **Accounts:** two separate Turso databases (`bagwis-accounts`, `kahonko-accounts`). Each backend only gets the token for its own database.
+- **Secrets** (database URLs and tokens, router keys) live only in the Render and Vercel dashboards, never in this repo.
+
+### 1. Turso (account databases)
+
+1. Go to https://turso.tech, click **Sign up** and choose **Continue with GitHub**.
+2. Create a database named `bagwis-accounts`. Pick the location closest to the Philippines.
+3. On that database's page, copy its **URL** (it starts with `libsql://`). Save it in Notepad as *A URL*.
+4. On the same page, create a **token** (read and write, no expiry) and copy it right away, because it's shown only once. Save it as *A TOKEN*.
+5. Repeat steps 2 to 4 for a second database named `kahonko-accounts`: *B URL*, *B TOKEN*.
+
+Don't save that Notepad file inside the project folder.
+
+### 2. Render (backends + mock router)
+
+1. Go to https://render.com and sign up with **GitHub**. Allow it to see the `RagChatBotTester` repo.
+2. Click **New +** → **Blueprint**, then pick `bruhasu/RagChatBotTester` (branch `main`).
+3. Render reads `render.yaml` and lists 3 services. It asks for `DB_URL` and `DB_AUTH_TOKEN`:
+   - under **ragtester-backend-a**: *A URL* and *A TOKEN*
+   - under **ragtester-backend-b**: *B URL* and *B TOKEN* (don't swap them!)
+4. Click **Deploy Blueprint** and wait until all three services show **Live** (a few minutes).
+5. Open **ragtester-mock-router** and look at its address at the top. If it isn't exactly `https://ragtester-mock-router.onrender.com`, open each backend → **Environment**, set `ROUTER_API_URL` to the real address, and click **Save**.
+6. Copy the addresses of **ragtester-backend-a** and **ragtester-backend-b**.
+7. Test: open `<backend-a address>/health` in your browser. You should see `{"ok":true,"tenant":"tenantA"}`. The first visit can take up to a minute.
+
+### 3. Vercel (the two websites)
+
+1. Go to https://vercel.com, sign up (**Hobby**) with **GitHub**.
+2. Click **Add New…** → **Project** → **Import** next to `RagChatBotTester`.
+3. Fill in:
+   - **Project Name:** `bagwis-helpdesk`
+   - **Framework Preset:** Vite
+   - **Root Directory:** click **Edit**, pick `client`
+   - **Build Command** (under Build and Output Settings): turn on the override, type `npm run build:a`
+   - **Environment Variables:** Key `BACKEND_URL`, Value = the backend A address (no `/` at the end)
+4. Click **Deploy**.
+5. Repeat steps 2 to 4 for Tenant B: name `kahonko-support`, build command `npm run build:b`, `BACKEND_URL` = the backend B address.
+
+### 4. Test the hosted sites
+
+1. Wake everything up: open the three `/health` addresses and wait until each shows `"ok":true`.
+2. Open the Bagwis site → **Create one** → you see "School demo: please don't use a real password." Sign up with a fake password, then log in. You should see "Welcome, <name>!".
+3. Refresh the page: you're still logged in. Open `/chat` and refresh: the page still loads.
+4. Open the KahonKo site and log in with the **same** email and password: you should get "Incorrect email or password." (the accounts are separate).
+5. In Turso, open `bagwis-accounts` and look at the `users` table: only `tenantA` rows, and passwords only as hashes.
+
+**Good to know:** free Render services sleep after about 15 minutes without visitors, so the first login after a break can take up to a minute. Every push to `main` redeploys Vercel and Render automatically. Chat replies on the site are still fake (see `client/src/chatService.js`).
 
 ## Document sources
 

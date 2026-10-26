@@ -188,7 +188,7 @@ export async function sendFeedback({ query, rating }) {
 // friendly error message around getAnswer.)
 //
 // async function getAnswer(query) {
-//   const res = await fetch("/chat", {
+//   const res = await fetch("/api/chat", {
 //     method: "POST",
 //     headers: { "Content-Type": "application/json" },
 //     body: JSON.stringify({ query, sessionId: getSessionId() }),
@@ -198,7 +198,7 @@ export async function sendFeedback({ query, rating }) {
 // }
 //
 // export async function sendFeedback({ query, rating }) {
-//   const res = await fetch("/feedback", {
+//   const res = await fetch("/api/feedback", {
 //     method: "POST",
 //     headers: { "Content-Type": "application/json" },
 //     body: JSON.stringify({ sessionId: getSessionId(), query, rating }),

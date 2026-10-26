@@ -1,0 +1,96 @@
+# render.yaml: tells Render (render.com) to create 3 free web services from this repo.
+#   1. ragtester-mock-router  - the fake AI router (stand-in for the partner's service)
+#   2. ragtester-backend-a    - backend for Tenant A (Bagwis), with its own Turso database
+#   3. ragtester-backend-b    - backend for Tenant B (KahonKo), with its own Turso database
+# NO secrets in this file. "generateValue" makes Render create a random key itself, and
+# "sync: false" means you paste the value into the Render dashboard (see README).
+
+services:
+  - type: web
+    name: ragtester-mock-router
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: mock-router
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MOCK_KEY_TENANT_A
+        generateValue: true
+      - key: MOCK_KEY_TENANT_B
+        generateValue: true
+
+  - type: web
+    name: ragtester-backend-a
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TENANT_ID
+        value: tenantA
+      - key: BRAND_NAME
+        value: Bagwis University Help Desk
+      - key: BRAND_PRIMARY_COLOR
+        value: "#1B2A4A"
+      - key: BRAND_ACCENT_COLOR
+        value: "#D4AF37"
+      - key: BRAND_LOGO
+        value: wing.svg
+      # If Render gives the mock router a different address, fix this in the dashboard.
+      - key: ROUTER_API_URL
+        value: https://ragtester-mock-router.onrender.com
+      # Copied from the mock router, so the two always match. Never typed by hand.
+      - key: ROUTER_API_KEY
+        fromService:
+          type: web
+          name: ragtester-mock-router
+          envVarKey: MOCK_KEY_TENANT_A
+      # Tenant A's Turso database. Paste these in the dashboard.
+      - key: DB_URL
+        sync: false
+      - key: DB_AUTH_TOKEN
+        sync: false
+
+  - type: web
+    name: ragtester-backend-b
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TENANT_ID
+        value: tenantB
+      - key: BRAND_NAME
+        value: KahonKo Gadgets Support
+      - key: BRAND_PRIMARY_COLOR
+        value: "#C2410C"
+      - key: BRAND_ACCENT_COLOR
+        value: "#FFFFFF"
+      - key: BRAND_LOGO
+        value: box.svg
+      - key: ROUTER_API_URL
+        value: https://ragtester-mock-router.onrender.com
+      - key: ROUTER_API_KEY
+        fromService:
+          type: web
+          name: ragtester-mock-router
+          envVarKey: MOCK_KEY_TENANT_B
+      # Tenant B's Turso database (a DIFFERENT one from Tenant A). Paste these in the dashboard.
+      - key: DB_URL
+        sync: false
+      - key: DB_AUTH_TOKEN
+        sync: false

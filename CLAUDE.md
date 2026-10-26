@@ -39,10 +39,11 @@ aiclassproj/
 ├── README.md                 # public intro: what it is, how to run on Windows, sources, credits
 ├── Test website.pdf          # the spec
 ├── notes.md                  # dated daily log: what we tried and what broke
+├── render.yaml               # Render blueprint: mock router + backend A + backend B (no secrets)
 ├── server/                   # Express backend. Holds the API key and forwards requests
 │   ├── package.json
 │   ├── server.js
-│   ├── auth.js               # accounts: SQLite (node:sqlite) + bcryptjs + httpOnly session cookie, /auth/* routes
+│   ├── auth.js               # accounts: @libsql/client (SQLite file locally, Turso when hosted) + bcryptjs + httpOnly session cookie, /auth/* routes
 │   ├── data/                 # tenantA.db, tenantB.db (created on start, gitignored, NEVER share)
 │   ├── .env.example          # template with fake values (safe to share)
 │   ├── .env.tenantA          # real values for Tenant A (NEVER share or commit)
@@ -53,6 +54,8 @@ aiclassproj/
 ├── client/                   # React site (Vite)
 │   ├── package.json
 │   ├── index.html
+│   ├── vercel.json           # Vercel: /api/... → api/proxy.js, everything else → index.html
+│   ├── api/proxy.js          # Vercel function: passes /api/<route> to BACKEND_URL/<route> (allow-list)
 │   ├── public/
 │   │   ├── images/           # banner-1..3.jpg (old navy placeholders, no longer used by the login page)
 │   │   └── logos/            # wing.svg (Tenant A), box.svg (Tenant B)
@@ -135,8 +138,8 @@ DB_PATH=data/tenantA.db
 ## Accounts (real sign-up and login, one database per tenant)
 
 - **No demo or hard-coded accounts.** Users create one on `/signup` (full name, email, password, confirm password).
-- **Each tenant has its own SQLite file**, set by `DB_PATH` in its `.env` (`server/data/tenantA.db`, `server/data/tenantB.db`). Each backend opens only its own file. Uses Node's built-in `node:sqlite`, so there's nothing extra to install. `server/data/` is gitignored.
-- Every `users` and `sessions` row also stores `tenant_id`, and every query filters on it. On start, the backend refuses to run if its file holds another tenant's users.
+- **Each tenant has its own database.** Locally: a SQLite file set by `DB_PATH` in its `.env` (`server/data/tenantA.db`, `server/data/tenantB.db`, gitignored). Hosted: its own **Turso** database (`bagwis-accounts` / `kahonko-accounts`), set by `DB_URL` + `DB_AUTH_TOKEN` in the Render dashboard only. `DB_URL` wins over `DB_PATH`. Both go through `@libsql/client`. With `NODE_ENV=production`, the backend refuses to start without `DB_URL` (Render's disk is wiped on restart).
+- Every `users` and `sessions` row also stores `tenant_id`, and every query filters on it. On start, the backend refuses to run if its database holds another tenant's users.
 - **Passwords:** hashed with bcrypt (`bcryptjs`, the plain-JS version, because the native `bcrypt` needs C++ build tools on Windows). 12 rounds, 8 to 72 characters. Never store, log or return a plain password or a hash.
 - **Sessions:** a random token in an **httpOnly, SameSite=Strict** cookie (Secure when `NODE_ENV=production`). The database stores only the token's SHA-256 hash. It lasts 7 days, and logging out deletes it. Never use localStorage or sessionStorage for login.
 - The cookie name is per tenant (`sid_tenantA` / `sid_tenantB`), because browsers send localhost cookies to every port.
@@ -149,8 +152,8 @@ Tenant B's orange is `#C2410C` in the client (dark enough for white text to stay
 
 ## Hard rules
 
-1. **The API key must never reach the browser.** It lives only in `server/.env.*` and is only read in `server/`. Never put it in `client/`, never use a `VITE_` env var for it, never send it in any response. If the React code ever contains the key, move it back to the server.
-2. The browser only talks to **our** backend (`/chat`, `/feedback`, `/config`, `/auth/*`). Only the backend talks to the router. One exception: the login page's weather card calls the public Open-Meteo API directly (no key, nothing private is sent).
+1. **The API key must never reach the browser.** It lives only in `server/.env.*` (locally) or the Render dashboard (hosted), and is only read in `server/`. Never put it in `client/`, never use a `VITE_` env var for it, never send it in any response. If the React code ever contains the key, move it back to the server. Same for Turso URLs/tokens: only in `.env` files or the Render dashboard, never in the repo.
+2. The browser only talks to **our** backend, always through `/api/...` (`/api/chat`, `/api/feedback`, `/api/config`, `/api/auth/*`). Only the backend talks to the router. One exception: the login page's weather card calls the public Open-Meteo API directly (no key, nothing private is sent).
 3. Every page shows a small footer: **"Fictional business for a school project."** (the `Footer` component).
 4. All documents are fake and written by us (AI drafts, edited by hand). No real student records, IDs, grades, or customer data. Log each document's origin and license in `documents/SOURCES.md`.
 5. Never commit or share `.env.tenantA` / `.env.tenantB` or anything in `server/data/`. Only `.env.example`.
@@ -167,12 +170,20 @@ Tenant B's orange is `#C2410C` in the client (dark enough for white text to stay
 | `POST /auth/login` | Body `{ email, password }`. 200 `{ user: { name, email } }` and sets the cookie, or 401 `{ error }` |
 | `GET /auth/me` | `{ user }`, or `{ user: null }` if logged out |
 | `POST /auth/logout` | Deletes the session and clears the cookie |
+| `GET /health` | `{ ok, tenant }`. Used by Render and to wake a sleeping service |
 
 If the router can't be reached, the backend returns 502 `{ error }`.
 
-The Vite dev proxy (`client/vite.config.js`) already forwards `/auth` to the tenant's own backend (5173 → 4000, 5174 → 4001).
+**The browser adds `/api` in front** (`/api/auth/login` → backend `/auth/login`), so React pages like `/chat` never clash with backend routes:
+- Locally, the Vite dev proxy (`client/vite.config.js`) strips `/api` and forwards to the tenant's own backend (5173 → 4000, 5174 → 4001).
+- On Vercel, `client/vercel.json` rewrites `/api/...` to `client/api/proxy.js`, which forwards to `BACKEND_URL` (set per Vercel project) and passes cookies both ways. New backend routes must be added to its `ALLOWED` list.
 
-Note for the React step: the backend's `POST /chat` and the React page `/chat` share a path. The Vite dev proxy should forward only **POST** `/chat` and `/feedback` (plus `GET /config`) to the backend, and let a normal browser visit to `/chat` load the React page.
+## Hosting (free)
+
+- **Vercel:** two projects from the same repo, root `client`: `bagwis-helpdesk` (`npm run build:a`, `BACKEND_URL` = backend A) and `kahonko-support` (`npm run build:b`, `BACKEND_URL` = backend B).
+- **Render:** `render.yaml` blueprint → `ragtester-mock-router`, `ragtester-backend-a`, `ragtester-backend-b` (free, Singapore). The mock keys are random (`generateValue`) and copied into each backend's `ROUTER_API_KEY` with `fromService`. `DB_URL` / `DB_AUTH_TOKEN` are `sync: false` (pasted in the dashboard).
+- **Turso:** one database per tenant, each with its own token.
+- Step-by-step click guide: README → "Host it online".
 
 ## Chat page requirements (from the PDF)
 
@@ -187,7 +198,7 @@ Note for the React step: the backend's `POST /chat` and the React page `/chat` s
 
 Until the partner's service is ready, `mock-router` pretends to be it:
 - Runs on `http://localhost:3000` with `POST /v1/chat` and `POST /v1/feedback`.
-- Checks `x-api-key`: missing or unknown key → 401. It knows two fake keys: `mock-key-tenant-a-bagwis` (tenantA) and `mock-key-tenant-b-kahonko` (tenantB).
+- Checks `x-api-key`: missing or unknown key → 401. Locally it knows two fake keys: `mock-key-tenant-a-bagwis` (tenantA) and `mock-key-tenant-b-kahonko` (tenantB). Hosted (`NODE_ENV=production`) it only accepts `MOCK_KEY_TENANT_A` / `MOCK_KEY_TENANT_B` from Render, because the local keys are public in the repo. Uses `PORT` if set (Render).
 - Right now it returns a fake answer plus fake `sources`, each tagged with the tenant id. Later (Day 5) it can search **only that tenant's** files in `documents/`.
 - The response shape (`answer`, `sources`, ...) is **a guess. Confirm it with the partner** and keep the mock matching their real API.
 - Switching to the real service should only mean changing `ROUTER_API_URL` / `ROUTER_API_KEY` in the `.env` files.
@@ -220,6 +231,7 @@ cd server; npm run start:a
 cd server; npm run start:b
 
 # Quick test (curl.exe, not curl, because plain curl is a PowerShell alias)
+curl.exe http://localhost:4000/health     # {"ok":true,"tenant":"tenantA"}
 curl.exe -X POST http://localhost:4000/chat -H "Content-Type: application/json" -d '{\"query\": \"When does enrollment close?\", \"sessionId\": \"test-1\"}'
 
 # 3. React site → open http://localhost:5173 (Tenant A) or http://localhost:5174 (Tenant B)

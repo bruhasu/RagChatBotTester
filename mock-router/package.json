@@ -5,6 +5,9 @@
   "description": "Fake /v1/chat router service used until the real one is ready",
   "type": "module",
   "main": "server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node server.js"
   },

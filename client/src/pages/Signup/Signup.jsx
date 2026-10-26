@@ -49,6 +49,9 @@ export default function Signup() {
     <AuthLayout subtitle="Create an account to continue">
       <h2>Create your account</h2>
       <p className="auth-panel-text">Sign up for {tenant.shortName} in under a minute.</p>
+      <p className="signup-demo-note" role="note">
+        <strong>School demo:</strong> please don't use a real password.
+      </p>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {FIELDS.map((field) => {
@@ -87,7 +90,7 @@ export default function Signup() {
         Already have an account? <Link to="/login">Log in</Link>
       </p>
       <p className="auth-note">
-        Fictional business for a school project. Please don't reuse a password from a real account.
+        Fictional business for a school project.
       </p>
     </AuthLayout>
   );
