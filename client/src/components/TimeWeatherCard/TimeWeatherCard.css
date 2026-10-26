@@ -1,0 +1,65 @@
+/* Sits on the brand-colored login panel, so it uses the same see-through white as .login-note */
+.tw-card {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--brand-accent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+}
+
+.tw-card p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.tw-card svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Top row: time on the left, weather on the right */
+.tw-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.tw-time {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums; /* digits keep the same width, so the time doesn't wiggle */
+}
+
+.tw-time svg {
+  color: var(--brand-accent);
+}
+
+.tw-card .tw-weather-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--brand-accent);
+}
+
+.tw-temp {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.tw-weather-text {
+  opacity: 0.85;
+}
+
+/* Bottom: date and place, smaller */
+.tw-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  margin-top: 6px;
+  opacity: 0.85;
+}

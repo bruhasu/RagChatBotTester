@@ -1,0 +1,33 @@
+.dates-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dates-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 10px 0;
+}
+
+.dates-row + .dates-row {
+  border-top: 1px solid var(--border);
+}
+
+.dates-label {
+  font-weight: 500;
+}
+
+.dates-date {
+  color: var(--brand-primary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Not filled in yet */
+.dates-todo {
+  color: var(--muted);
+  font-style: italic;
+}

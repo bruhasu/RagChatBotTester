@@ -1,0 +1,246 @@
+.auth {
+  display: grid;
+  gap: 24px;
+}
+
+/* Heading */
+.auth-heading {
+  text-align: center;
+}
+
+.auth-heading h1 {
+  margin: 0 0 4px;
+  color: var(--brand-primary);
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  line-height: 1.2;
+}
+
+.auth-heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Banner: carousel (left ~60%) + form panel (right ~40%) */
+.auth-banner {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  min-height: 380px;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+/* Carousel background: a light tint of the tenant's main color */
+.auth-carousel {
+  position: relative;
+  background: color-mix(in srgb, var(--brand-primary) 12%, var(--surface));
+}
+
+/* One slide = tenant logo + one welcome line (tenantConfig.js login.highlights) */
+.auth-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 32px 56px; /* extra bottom room for the dots */
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+.auth-slide.is-active {
+  opacity: 1;
+}
+
+.auth-slide-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.auth-slide-text {
+  max-width: 28ch;
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.auth-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.auth-dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); /* thin outline so dots still show on white slides */
+  cursor: pointer;
+}
+
+/* Primary, not accent: Tenant B's accent is white and would vanish on the light background */
+.auth-dot[aria-current="true"] {
+  background: var(--brand-primary);
+}
+
+.auth-dot:focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+
+.auth-panel h2 {
+  margin: 0 0 4px;
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  line-height: 1.2;
+}
+
+.auth-panel-text {
+  margin: 0 0 20px;
+  font-style: italic;
+}
+
+/* Form: used by Login.jsx and Signup.jsx */
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.auth-field input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.auth-field input[aria-invalid="true"] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px #fca5a5;
+}
+
+/* Message right under one field (light box so it stays readable on navy and orange) */
+.auth-field-error {
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.auth-form .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.auth-form .btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Message for the whole form */
+.auth-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+/* "Don't have an account? Create one" / "Already have an account? Log in" */
+.auth-switch {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.auth-switch a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.auth-note {
+  margin: 16px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+}
+
+/* Mobile: carousel on top (shorter), panel below */
+@media (max-width: 720px) {
+  .auth {
+    gap: 16px;
+  }
+
+  .auth-banner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .auth-carousel {
+    height: 190px;
+  }
+
+  .auth-slide {
+    gap: 12px;
+    padding: 20px 20px 44px;
+  }
+
+  .auth-slide-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .auth-slide-text {
+    font-size: 1.15rem;
+  }
+
+  .auth-panel {
+    padding: 24px 16px;
+  }
+
+  /* 16px text stops phones from zooming in when you tap an input */
+  .auth-field input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-slide {
+    transition: none;
+  }
+}

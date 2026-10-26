@@ -1,0 +1,29 @@
+# Installed packages, in every folder (recreated with npm install)
+node_modules/
+
+# Real .env files hold API keys. Never upload them. (Works in every folder.)
+.env
+.env.*
+!.env.example
+
+# Account databases (names, emails, password hashes). Never upload them.
+server/data/
+
+# Real-school reference files: kept on this computer only.
+# This repo uses the fictional "Bagwis University" instead. Never publish these.
+client/public/images/nu-*
+/nu bulldog.png
+/nu home sample.png
+/nu login sample.png
+/NU Student Handbook.pdf
+
+# Personal Claude Code settings for this computer
+.claude/settings.local.json
+
+# Build output
+dist/
+
+# Python / pytest
+__pycache__/
+.pytest_cache/
+.venv/

@@ -1,0 +1,109 @@
+.navbar {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+
+.navbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 12px var(--side-padding); /* same edges as the page content */
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* White circle behind the logo so it shows up on any navbar color */
+.navbar-logo {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.navbar-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain; /* keep the logo's shape (no stretching) */
+}
+
+.navbar-links {
+  display: flex;
+  gap: 4px;
+}
+
+.navbar-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* big enough to tap */
+  padding: 0 14px;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.navbar-links a:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.navbar-links a.active {
+  opacity: 1;
+  background: var(--brand-accent);
+  color: var(--brand-on-accent);
+  font-weight: 600;
+}
+
+/* Logged-in user's name + Log out button (right side) */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-user-name {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.navbar-logout {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--brand-accent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.navbar-logout:hover {
+  background: var(--brand-accent);
+  color: var(--brand-on-accent);
+}
+
+.navbar-logout:focus-visible {
+  outline: 3px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
+/* Phones: name on its own line, links underneath */
+@media (max-width: 560px) {
+  .navbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

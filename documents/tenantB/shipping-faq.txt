@@ -1,0 +1,193 @@
+KAHONKO GADGETS
+SHIPPING FAQ
+Customer Care - Last updated August 1, 2026
+
+KahonKo Gadgets is a fictional online shop created for a demo project.
+All names, products and data in this file are synthetic.
+
+Need more help? Chat with us in the KahonKo app or at kahonko.example,
+email support@kahonko.example, or call (02) 8555-0177.
+Customer Care hours: Monday to Saturday, 9:00 AM to 6:00 PM (closed Sundays and public holidays).
+
+"Business days" means Monday to Saturday, except Philippine public holidays.
+
+==================================================================
+DELIVERY AREAS AND TIMES
+==================================================================
+
+Q1: Where do you deliver?
+A: Anywhere in the Philippines. We do not ship outside the Philippines.
+
+Q2: How long does shipping take?
+A: With Standard shipping, Metro Manila orders arrive in 2 to 4 business days. Provincial orders take 5 to 8 business days: Rest of Luzon 5 to 6, Visayas 5 to 7, and Mindanao 6 to 8 business days.
+
+Q3: How much is the shipping fee?
+A: Standard shipping costs ₱79 for Metro Manila, ₱119 for the Rest of Luzon, ₱149 for Visayas and ₱169 for Mindanao.
+
+Q4: Is there free shipping?
+A: Yes, for Standard shipping. Metro Manila and Rest of Luzon orders of ₱999 and up ship free. Visayas and Mindanao orders of ₱1,499 and up ship free. The amount is counted after vouchers.
+
+Q5: Is the shipping fee per item?
+A: No. The shipping fee is charged once per order, no matter how many items are in it.
+
+Q6: What is a remote area?
+A: Some small islands and far municipalities are remote areas for our couriers. Checkout tells you if your address is one. Remote areas pay a ₱100 surcharge and need 3 to 5 extra business days. The surcharge applies even when the order ships free.
+
+Q7: Do you deliver on Sundays?
+A: No. Our couriers deliver Monday to Saturday, except public holidays.
+
+==================================================================
+FASTER DELIVERY
+==================================================================
+
+Q8: Do you have express delivery?
+A: Yes. Express costs ₱149 in Metro Manila (1 to 2 business days) and ₱199 in the Rest of Luzon (2 to 3 business days).
+
+Q9: Can I get express delivery to Cebu or Davao?
+A: No. Express is not available for Visayas, Mindanao or remote areas. Please choose Standard shipping.
+
+Q10: Do you have same-day delivery?
+A: Yes, in Metro Manila only. Same-Day costs ₱249. Order and pay by 11:00 AM, Monday to Saturday, and your parcel arrives by 9:00 PM the same day.
+
+Q11: I ordered Same-Day at 11:30 AM. Will it still arrive today?
+A: No. Same-Day orders paid after 11:00 AM are delivered the next business day.
+
+Q12: Does free shipping apply to Express or Same-Day?
+A: No. Free shipping applies to Standard shipping only.
+
+==================================================================
+ORDER PROCESSING
+==================================================================
+
+Q13: When will my order be shipped?
+A: Orders paid by 2:00 PM, Monday to Saturday, are shipped the same business day. Orders paid later are shipped the next business day. We do not ship on Sundays or public holidays.
+
+Q14: Why does processing take longer during sales?
+A: During the 11.11 Sale (November 11, 2026), Black Friday (November 27, 2026) and the 12.12 Sale (December 12, 2026), order processing can take 1 to 2 extra business days because of the high number of orders.
+
+Q15: Which couriers do you use?
+A: LakbayExpress for Standard shipping, and BilisPadala for Express and Same-Day delivery.
+
+Q16: Can I pick up my order at your store?
+A: No. KahonKo Gadgets is online only. We do not have a walk-in store, and our warehouse is not open to the public.
+
+Q17: My order has a pre-order item. When will it ship?
+A: Pre-order items ship on the date shown on the product page. For example, the ActiveWatch S ships from November 20, 2026. If your order also has in-stock items, we ship those first and send the pre-order item separately at no extra cost.
+
+==================================================================
+TRACKING
+==================================================================
+
+Q18: How do I track my order?
+A: We send your tracking number by SMS and email within 24 hours after dispatch. Track it at kahonko.example/track using your order number and mobile number, or in the KahonKo app under My Orders.
+
+Q19: What does my order number look like?
+A: KKO followed by 8 digits, for example KKO-12345678.
+
+Q20: My tracking has not moved for 3 days. What should I do?
+A: Tracking sometimes pauses while parcels move between hubs, especially for Visayas and Mindanao. If it has not moved for more than 3 business days, contact Customer Care with your order number and we will check with the courier.
+
+Q21: What if my parcel never arrives?
+A: If your parcel is not delivered within 10 business days after the latest estimated delivery date, we declare it lost. You can choose a full refund or a free replacement. All parcels are insured for the value of the items.
+
+==================================================================
+CHANGES AND CANCELLATIONS
+==================================================================
+
+Q22: Can I change my order after paying?
+A: Yes, if it has not been shipped yet. Contact Customer Care as soon as possible with your order number.
+
+Q23: Can I change my delivery address?
+A: Only before your order is dispatched. After dispatch, the address cannot be changed.
+
+Q24: Can I cancel my order?
+A: Yes, free of charge, before it is dispatched. You get a full refund including the shipping fee. After dispatch, you can no longer cancel, but you may refuse the delivery or return the item later under our Return and Refund Policy.
+
+Q25: What happens if I refuse a prepaid parcel?
+A: Once it is back at our warehouse, we refund the item price minus the original shipping fee. If you refused it because the box was visibly damaged, you get a full refund.
+
+==================================================================
+CASH ON DELIVERY (COD) AND PAYMENTS
+==================================================================
+
+Q26: Do you accept Cash on Delivery?
+A: Yes, for orders up to ₱5,000. There is no COD fee. COD is not available in remote areas.
+
+Q27: What payment methods do you accept?
+A: Credit and debit cards, e-wallets, online bank transfer, and Cash on Delivery.
+
+Q28: Can someone else receive and pay for my COD parcel?
+A: Yes. Anyone at the delivery address may receive the parcel and pay the courier.
+
+Q29: What happens if I refuse a COD parcel?
+A: There is no charge. However, if you refuse COD parcels two times, COD is turned off on your account and you will need to pay online for future orders. Refusing a visibly damaged parcel does not count.
+
+Q30: Does the courier give change?
+A: Couriers carry limited change. Please prepare the exact amount when possible.
+
+==================================================================
+DELIVERY PROBLEMS
+==================================================================
+
+Q31: What if nobody is home when the courier arrives?
+A: The courier tries to deliver up to 3 times. After 3 failed attempts, the parcel returns to our warehouse. For prepaid orders, you can ask us to ship it again by paying the shipping fee again, or we cancel the order and refund you. COD orders are cancelled.
+
+Q32: The box looks crushed. Should I accept it?
+A: You may refuse it at the door and we will refund you in full. If you accept it, record an unboxing video and report any damage within 48 hours under the Return and Refund Policy.
+
+Q33: An item is missing from my parcel. What do I do?
+A: Report it within 48 hours of delivery through My Orders, Request Return, or email returns@kahonko.example. You must send a continuous unboxing video that starts with the sealed parcel and shows the shipping label.
+
+Q34: I received the wrong item. Who pays to send it back?
+A: We do. Report it within 48 hours with an unboxing video, and we will arrange a free pickup and send the right item or give you a full refund.
+
+Q35: Why do you ask for an unboxing video?
+A: It is the only fair way to confirm missing or wrong items. We recommend recording a video every time you open a KahonKo parcel.
+
+==================================================================
+HOLIDAYS
+==================================================================
+
+Q36: What is the last day to order for Christmas delivery?
+A: For Standard shipping, order by December 18, 2026 for Metro Manila, December 16 for the Rest of Luzon, and December 14 for Visayas and Mindanao. For Same-Day delivery in Metro Manila, order by 11:00 AM on December 23, 2026.
+
+Q37: Is your warehouse closed during the holidays?
+A: Yes. We do not dispatch orders on December 24 and 25, 2026, and from December 31, 2026 to January 1, 2027. Orders placed on those days ship on the next business day.
+
+Q38: Can I return a Christmas gift after the holidays?
+A: Yes. Items delivered from November 15 to December 24, 2026 can be returned for change of mind until January 8, 2027, as long as they meet the normal return conditions.
+
+==================================================================
+PACKAGING AND SPECIAL ITEMS
+==================================================================
+
+Q39: How are items packed?
+A: In a recyclable brown KahonKo box with paper padding.
+
+Q40: Can you ship my order as a gift?
+A: Yes. Choose "Gift order" at checkout. We leave out the price list, and the receiver can use the order number for warranty claims.
+
+Q41: Can I fly with the power bank I ordered?
+A: Most of our power banks are under the 100 Wh airline carry-on limit: the MagBank 5000 (18.5 Wh), PocketBank 10000 (37 Wh) and PocketBank 20000 (74 Wh). The TravelBank 30000 is 111 Wh, which is above the limit, so you need the airline's approval before flying with it.
+
+Q42: Do you ship power banks to all areas?
+A: Yes, power banks ship by land and sea to all regions. Because of battery shipping rules, power bank orders to Visayas and Mindanao may arrive at the later end of the delivery estimate.
+
+Q43: How long does a custom engraved case take?
+A: The Custom Engraved Leather Case is made to order. It ships in 5 to 7 business days, and then the normal delivery time applies.
+
+==================================================================
+OTHER QUESTIONS
+==================================================================
+
+Q44: Can I combine two orders to save on shipping?
+A: Orders can be combined only if neither has been dispatched yet and both go to the same address. Contact Customer Care, and we will refund the extra shipping fee.
+
+Q45: Can I change the delivery date?
+A: We cannot schedule a specific delivery date. If you will be away, you may ask Customer Care to hold your order for up to 5 business days before dispatch.
+
+Q46: Do you deliver to offices or condominium lobbies?
+A: Yes. Add the building name, floor and unit, and a contact number. Some buildings require the receiver to come down to the lobby.
+
+Q47: How do I return an item?
+A: See our Return and Refund Policy. In short: request a return in My Orders within 15 days of delivery, get an RA number, and ship the item within 5 calendar days.

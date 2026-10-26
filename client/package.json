@@ -1,0 +1,24 @@
+{
+  "name": "test-site-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test website: React chat site for Tenant A or Tenant B",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode tenantA",
+    "dev:a": "vite --mode tenantA",
+    "dev:b": "vite --mode tenantB",
+    "build:a": "vite build --mode tenantA",
+    "build:b": "vite build --mode tenantB"
+  },
+  "dependencies": {
+    "lucide-react": "^1.61.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  }
+}

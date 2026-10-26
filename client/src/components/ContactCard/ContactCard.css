@@ -1,0 +1,29 @@
+.contact-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.contact-list dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contact-list dd {
+  margin: 2px 0 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.contact-list a {
+  color: var(--brand-primary);
+}
+
+/* Not filled in yet */
+.contact-todo {
+  color: var(--muted);
+  font-style: italic;
+}

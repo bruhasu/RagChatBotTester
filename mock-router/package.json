@@ -1,0 +1,14 @@
+{
+  "name": "mock-router",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fake /v1/chat router service used until the real one is ready",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

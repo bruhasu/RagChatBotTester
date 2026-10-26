@@ -1,0 +1,8 @@
+/* Layout, carousel and form styles are shared with Login: see components/AuthLayout/AuthLayout.css */
+
+/* Small help text under a field, e.g. "At least 8 characters." */
+.signup-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}

@@ -1,0 +1,11 @@
+/* Layout, carousel and form styles are shared with Signup: see components/AuthLayout/AuthLayout.css */
+
+/* Shown after "Create account" sends you here */
+.login-success {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #166534;
+  font-weight: 600;
+}
