@@ -27,7 +27,9 @@ async function forward(request) {
 
     const headers = new Headers({ "Content-Type": reply.headers.get("content-type") ?? "application/json" });
     for (const cookie of reply.headers.getSetCookie()) headers.append("Set-Cookie", cookie);
-    return new Response(await reply.text(), { status: reply.status, headers });
+    // 204 ("done", e.g. feedback saved) must have no body at all.
+    const body = reply.status === 204 ? null : await reply.text();
+    return new Response(body, { status: reply.status, headers });
   } catch (err) {
     console.error(`Backend call to /${target} failed:`, err.message);
     return Response.json({ error: "Could not reach the backend" }, { status: 502 });

@@ -78,3 +78,17 @@ A dated log of what we tried and what broke (the PDF asks for this). Add to it e
 **Watch out**
 - Render's free disk is wiped on restart, so a hosted backend refuses to start without `DB_URL`.
 - Render free services sleep after ~15 min. The first request can take up to a minute (the proxy waits up to 60 s).
+
+## 2026-10-27
+
+**Done**
+- Connected Tenant A to the partner's real router (https://lumen-roan-two.vercel.app). The key is only in `server/.env.tenantA` (gitignored), and in the Render dashboard once hosted. Tenant B stays on the mock router (no key yet).
+- Real API shapes (from their docs page and `test1ref.webp`): chat reply `{ request_id, answer "[1]", sources [{ document_id, chunk_id, score }], route, usage }`. Feedback `{ request_id, rating: 1 | -1 }` → 204 with no body. Errors `{ error: { code, message } }`. The mock router now matches these exactly.
+- Chat page uses the backend now (no more fake answers). Sources are numbered to match `[1]` in the answer. Thumbs buttons send that answer's `request_id`.
+- `/chat` and `/feedback` now need a login, because each real question costs money and the backend will be public.
+- Tested: real answers for enrollment and scholarship GWA (3.50, matches facts.md), 👍 accepted (204), bad rating 400, logged out 401, too-long question 400, the proxy passing a 204 through.
+
+**What broke**
+- First feedback test: 422 "Invalid request: rating." The real router wants 1 / -1, not "up" / "down". Fix: the backend translates.
+- A GET to `/v1/feedback` said 404, which looked like "no feedback endpoint". It's POST-only. Lesson: test with the right method.
+- A 204 reply has no body, so `res.json()` would crash in the backend, the Vercel proxy and the browser. All three now handle 204.

@@ -35,43 +35,56 @@ app.get("/health", (req, res) => {
 
 // Checks the x-api-key header. If it's missing or unknown, replies 401 and stops.
 // If it's valid, remembers which tenant is calling (req.tenant) and continues.
+// Errors look like the real router's: { error: { code, message } }
+function sendError(res, status, code, message) {
+  res.status(status).json({ error: { code, message } });
+}
+
 function requireApiKey(req, res, next) {
   const key = req.get("x-api-key");
   const tenant = TENANTS[key];
   if (!tenant) {
-    return res.status(401).json({ error: "Missing or invalid API key" });
+    return sendError(res, 401, "invalid_api_key", "Missing or invalid API key.");
   }
   req.tenant = tenant;
   next();
 }
 
+// Same reply shape as the partner's real POST /v1/chat (https://lumen-roan-two.vercel.app).
+// Document ids start with the tenant id, so the isolation tests can check them.
 app.post("/v1/chat", requireApiKey, (req, res) => {
   const { query, session_id } = req.body ?? {};
-  if (!query) {
-    return res.status(400).json({ error: "query is required" });
+  if (typeof query !== "string" || query.length < 1 || query.length > 2000) {
+    return sendError(res, 422, "invalid_request", "Invalid request: query.");
   }
 
   console.log(`[chat] ${req.tenant.id} session=${session_id}: ${query}`);
 
   res.json({
-    answer: `[MOCK ${req.tenant.id}] This is a fake answer from ${req.tenant.name} to: "${query}"`,
+    request_id: crypto.randomUUID(),
+    answer: `[MOCK ${req.tenant.id}] This is a fake answer from ${req.tenant.name} to: "${query}" [1] [2]`,
     sources: [
-      { tenant: req.tenant.id, document: `${req.tenant.id}-fake-document-1.pdf`, snippet: "Fake passage one." },
-      { tenant: req.tenant.id, document: `${req.tenant.id}-fake-document-2.pdf`, snippet: "Fake passage two." },
+      { document_id: `${req.tenant.id}-fake-document-1`, chunk_id: 1, score: 0.9 },
+      { document_id: `${req.tenant.id}-fake-document-2`, chunk_id: 2, score: 0.8 },
     ],
-    session_id,
+    route: { model_tier: "none", k: 2, difficulty: 0, escalated: false, top_score: 0.9 },
+    usage: { tokens_in: 0, tokens_out: 0, cost_usd: 0, latency_ms: 0 },
   });
 });
 
+// Same as the real POST /v1/feedback: { request_id, rating: 1 | -1 } -> 204 with no body.
 app.post("/v1/feedback", requireApiKey, (req, res) => {
-  const { session_id, query, rating } = req.body ?? {};
-  if (rating !== "up" && rating !== "down") {
-    return res.status(400).json({ error: 'rating must be "up" or "down"' });
+  const { request_id, rating } = req.body ?? {};
+  if (typeof request_id !== "string" || !request_id) {
+    return sendError(res, 422, "invalid_request", "Invalid request: request_id.");
+  }
+  if (rating !== 1 && rating !== -1) {
+    return sendError(res, 422, "invalid_request", "Invalid request: rating.");
   }
 
-  console.log(`[feedback] ${req.tenant.id} session=${session_id} rating=${rating}: ${query}`);
+  console.log(`[feedback] ${req.tenant.id} request=${request_id} rating=${rating}`);
 
-  res.json({ ok: true, tenant: req.tenant.id });
+  res.status(204).end();
 });
 
 app.listen(PORT, () => {

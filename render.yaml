@@ -1,7 +1,9 @@
 # render.yaml: tells Render (render.com) to create 3 free web services from this repo.
 #   1. ragtester-mock-router  - the fake AI router (stand-in for the partner's service)
-#   2. ragtester-backend-a    - backend for Tenant A (Bagwis), with its own Turso database
-#   3. ragtester-backend-b    - backend for Tenant B (KahonKo), with its own Turso database
+#   2. ragtester-backend-a    - backend for Tenant A (Bagwis), with its own Turso database.
+#                               Talks to the partner's real router.
+#   3. ragtester-backend-b    - backend for Tenant B (KahonKo), with its own Turso database.
+#                               Talks to the mock router until Tenant B gets a real key.
 # NO secrets in this file. "generateValue" makes Render create a random key itself, and
 # "sync: false" means you paste the value into the Render dashboard (see README).
 
@@ -45,15 +47,12 @@ services:
         value: "#D4AF37"
       - key: BRAND_LOGO
         value: wing.svg
-      # If Render gives the mock router a different address, fix this in the dashboard.
+      # Tenant A uses the partner's REAL router.
       - key: ROUTER_API_URL
-        value: https://ragtester-mock-router.onrender.com
-      # Copied from the mock router, so the two always match. Never typed by hand.
+        value: https://lumen-roan-two.vercel.app
+      # The partner's API key for Tenant A. Paste it in the dashboard, never here.
       - key: ROUTER_API_KEY
-        fromService:
-          type: web
-          name: ragtester-mock-router
-          envVarKey: MOCK_KEY_TENANT_A
+        sync: false
       # Tenant A's Turso database. Paste these in the dashboard.
       - key: DB_URL
         sync: false

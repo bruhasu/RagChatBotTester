@@ -1,6 +1,6 @@
 # Multi-Tenant AI Help Desk: Test Website
 
-A school project. This repo is the **test website**: a small fake business with a chatbot that uses an AI router service the way a paying customer would. The router itself (`POST /v1/chat`) is built separately by my project partner. Until it's ready, a **mock router** in this repo stands in for it.
+A school project. This repo is the **test website**: a small fake business with a chatbot that uses an AI router service the way a paying customer would. The router itself (`POST /v1/chat`) is built separately by my project partner. Tenant A uses the partner's real router. Tenant B uses a **mock router** in this repo until it gets its own key.
 
 The test website has three jobs:
 
@@ -47,7 +47,7 @@ The API key only ever lives in the backend. The browser never sees it.
 │   └── src/
 │       ├── tenantConfig.js   # all branding and text for Tenant A and B
 │       ├── homeContent.js    # Home page topics, dates, FAQs
-│       ├── chatService.js    # where chat replies come from (fake for now)
+│       ├── chatService.js    # sends questions and thumbs up / down to the backend
 │       ├── authService.js    # sign up / log in / log out (talks to the backend)
 │       ├── weatherService.js # login page weather (Open-Meteo)
 │       ├── pages/            # Login, Signup, Home, Chat, About (one folder each)
@@ -102,6 +102,8 @@ Then open each file and fill it in. For the **mock router**, use these test valu
 
 Keep the quotes around colors: in `.env` files, `#` starts a comment. The mock keys only work with the mock router, so they are safe to show here. **Never commit a real key.**
 
+To use the partner's **real** router for Tenant A, change two lines in `.env.tenantA`: `ROUTER_API_URL=https://lumen-roan-two.vercel.app` and `ROUTER_API_KEY=` followed by the key from the partner (ask them for it).
+
 ### 3. Start everything
 
 Open one PowerShell terminal for each line:
@@ -123,25 +125,32 @@ cd client; npm run dev:a
 cd client; npm run dev:b
 ```
 
-Logging in needs the backend, so for Tenant A run Terminals 2 and 4, and for Tenant B run Terminals 3 and 5. Chat replies are still **fake** (see `client/src/chatService.js`). Stop anything with `Ctrl + C`.
+Logging in and chatting need the backend, so for Tenant A run Terminals 2 and 4, and for Tenant B run Terminals 1, 3 and 5. Stop anything with `Ctrl + C`.
+
+**Chat:** answers show numbered sources (`[1]` in the answer = source 1 below it). Thumbs up / down sends feedback for that answer to the router. You must be logged in to chat.
 
 **Accounts:** click **Create one** on the login page to make an account. Each business has its own accounts, so an account made on Tenant A does not work on Tenant B. Passwords are stored only as bcrypt hashes. This is a school project, so don't reuse a real password.
 
 ### Quick backend test
 
-`curl.exe` (not `curl`, which is a PowerShell alias), with Terminals 1 and 2 running:
+With Terminal 2 running (and an account you made on the site):
 
 ```powershell
-curl.exe -X POST http://localhost:4000/chat -H "Content-Type: application/json" -d '{\"query\": \"When does enrollment close?\", \"sessionId\": \"test-1\"}'
+curl.exe http://localhost:4000/health
+# /chat needs a login, so keep the login cookie in a "session":
+$s = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-RestMethod -Method Post http://localhost:4000/auth/login -WebSession $s -ContentType "application/json" -Body '{"email":"you@example.com","password":"your-password"}'
+Invoke-RestMethod -Method Post http://localhost:4000/chat -WebSession $s -ContentType "application/json" -Body '{"query":"When does enrollment close?","sessionId":"test-1"}'
 ```
 
-You should get a JSON reply with an `answer` and `sources` tagged `tenantA`.
+You should see `{"ok":true,"tenant":"tenantA"}`, then your name, then an `answer` with `sources` and a `request_id`.
 
 ## Host it online (free)
 
 ```
-Friend's browser -> Vercel site (Tenant A or B) --/api/...--> Render backend A or B -> Render mock router
-                    one Vercel project per tenant              each with its OWN Turso database
+Friend's browser -> Vercel site A --/api/...--> Render backend A -> partner's router (lumen-roan-two.vercel.app)
+                 -> Vercel site B --/api/...--> Render backend B -> Render mock router
+                    one Vercel project per tenant   each backend has its OWN Turso database
 ```
 
 - **Websites:** two Vercel projects from this repo (root folder `client`). `client/api/proxy.js` passes `/api/...` to that tenant's backend, so the site and the API share one address and the login cookie just works.
@@ -163,11 +172,11 @@ Don't save that Notepad file inside the project folder.
 
 1. Go to https://render.com and sign up with **GitHub**. Allow it to see the `RagChatBotTester` repo.
 2. Click **New +** → **Blueprint**, then pick `bruhasu/RagChatBotTester` (branch `main`).
-3. Render reads `render.yaml` and lists 3 services. It asks for `DB_URL` and `DB_AUTH_TOKEN`:
-   - under **ragtester-backend-a**: *A URL* and *A TOKEN*
-   - under **ragtester-backend-b**: *B URL* and *B TOKEN* (don't swap them!)
+3. Render reads `render.yaml` and lists 3 services. It asks for a few values:
+   - under **ragtester-backend-a**: `DB_URL` = *A URL*, `DB_AUTH_TOKEN` = *A TOKEN*, `ROUTER_API_KEY` = the partner's key for Tenant A
+   - under **ragtester-backend-b**: `DB_URL` = *B URL*, `DB_AUTH_TOKEN` = *B TOKEN* (don't swap them!)
 4. Click **Deploy Blueprint** and wait until all three services show **Live** (a few minutes).
-5. Open **ragtester-mock-router** and look at its address at the top. If it isn't exactly `https://ragtester-mock-router.onrender.com`, open each backend → **Environment**, set `ROUTER_API_URL` to the real address, and click **Save**.
+5. Open **ragtester-mock-router** and look at its address at the top. If it isn't exactly `https://ragtester-mock-router.onrender.com`, open **ragtester-backend-b** → **Environment**, set `ROUTER_API_URL` to the real address, and click **Save**.
 6. Copy the addresses of **ragtester-backend-a** and **ragtester-backend-b**.
 7. Test: open `<backend-a address>/health` in your browser. You should see `{"ok":true,"tenant":"tenantA"}`. The first visit can take up to a minute.
 
@@ -189,10 +198,11 @@ Don't save that Notepad file inside the project folder.
 1. Wake everything up: open the three `/health` addresses and wait until each shows `"ok":true`.
 2. Open the Bagwis site → **Create one** → you see "School demo: please don't use a real password." Sign up with a fake password, then log in. You should see "Welcome, <name>!".
 3. Refresh the page: you're still logged in. Open `/chat` and refresh: the page still loads.
-4. Open the KahonKo site and log in with the **same** email and password: you should get "Incorrect email or password." (the accounts are separate).
-5. In Turso, open `bagwis-accounts` and look at the `users` table: only `tenantA` rows, and passwords only as hashes.
+4. Ask "When does enrollment close?". You should get a real answer with numbered sources. Click 👍 on it.
+5. Open the KahonKo site and log in with the **same** email and password: you should get "Incorrect email or password." (the accounts are separate).
+6. In Turso, open `bagwis-accounts` and look at the `users` table: only `tenantA` rows, and passwords only as hashes.
 
-**Good to know:** free Render services sleep after about 15 minutes without visitors, so the first login after a break can take up to a minute. Every push to `main` redeploys Vercel and Render automatically. Chat replies on the site are still fake (see `client/src/chatService.js`).
+**Good to know:** free Render services sleep after about 15 minutes without visitors, so the first login after a break can take up to a minute. Every push to `main` redeploys Vercel and Render automatically. Tenant B's chat answers are fake (mock router) until it gets a real key.
 
 ## Document sources
 

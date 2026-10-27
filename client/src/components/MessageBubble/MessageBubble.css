@@ -59,22 +59,24 @@
   gap: 6px;
 }
 
+/* "[1]", matches the [1] in the answer text */
+.bubble-source-num {
+  margin-right: 6px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .bubble-source-doc {
   font-weight: 600;
 }
 
-.bubble-source-tenant {
+.bubble-source-meta {
   margin-left: 6px;
   padding: 1px 8px;
   border-radius: 999px;
   background: var(--brand-bg);
   color: var(--muted);
   font-size: 0.75rem;
-}
-
-.bubble-source-snippet {
-  display: block;
-  color: var(--muted);
 }
 
 /* Thumbs up / down */

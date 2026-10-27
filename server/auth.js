@@ -174,6 +174,14 @@ async function getSessionUser(req) {
   return row ? { name: row.full_name, email: row.email } : null;
 }
 
+// Put in front of a route so only logged-in users can use it (401 otherwise).
+// Used for /chat and /feedback, because every router call costs real money.
+export async function requireLogin(req, res, next) {
+  const user = await getSessionUser(req);
+  if (!user) return res.status(401).json({ error: "Please log in first." });
+  next();
+}
+
 // ---------- Routes (mounted at /auth in server.js) ----------
 
 export const authRouter = express.Router();

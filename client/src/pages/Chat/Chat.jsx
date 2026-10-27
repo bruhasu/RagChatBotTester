@@ -58,7 +58,7 @@ export default function Chat() {
         ...prev,
         {
           id: nextId++, role: "bot", text: reply.answer || tenant.errorReply, sources: reply.sources,
-          query: rateable ? query : undefined, feedback: null,
+          query: rateable ? query : undefined, requestId: reply.requestId, feedback: null,
         },
       ]);
     } catch (err) {
@@ -74,7 +74,7 @@ export default function Chat() {
     setMessages((prev) =>
       prev.map((m) => (m.id === message.id ? { ...m, feedback: rating } : m))
     );
-    sendFeedback({ query: message.query, rating }).catch(console.error);
+    sendFeedback({ query: message.query, rating, requestId: message.requestId }).catch(console.error);
   }
 
   return (
@@ -104,6 +104,7 @@ export default function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={tenant.chatPlaceholder}
+            maxLength={2000} // the router's limit
             aria-label="Type your question"
             autoFocus
           />

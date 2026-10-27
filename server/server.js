@@ -3,7 +3,7 @@
 // the router service. The key stays here and never reaches the browser.
 // Settings come from an .env file, e.g.: node --env-file=.env.tenantA server.js
 import express from "express";
-import { authRouter } from "./auth.js";
+import { authRouter, requireLogin } from "./auth.js";
 
 const app = express();
 app.use(express.json());
@@ -31,6 +31,8 @@ async function forwardToRouter(path, body, res) {
       },
       body: JSON.stringify(body),
     });
+    // 204 = "done" with no body (the router's reply to feedback).
+    if (r.status === 204) return res.status(204).end();
     res.status(r.status).json(await r.json());
   } catch (err) {
     // The router is down, unreachable, or didn't send back JSON.
@@ -54,19 +56,30 @@ app.get("/config", (req, res) => {
   });
 });
 
-app.post("/chat", (req, res) => {
+// The router accepts questions of 1 to 2000 characters.
+const MAX_QUERY_LENGTH = 2000;
+
+app.post("/chat", requireLogin, (req, res) => {
+  const query = typeof req.body?.query === "string" ? req.body.query.trim() : "";
+  if (!query || query.length > MAX_QUERY_LENGTH) {
+    return res.status(400).json({ error: `Please ask a question of 1 to ${MAX_QUERY_LENGTH} characters.` });
+  }
   forwardToRouter("/v1/chat", {
-    query: req.body.query,
+    query,
     session_id: req.body.sessionId,
   }, res);
 });
 
-app.post("/feedback", (req, res) => {
-  forwardToRouter("/v1/feedback", {
-    session_id: req.body.sessionId,
-    query: req.body.query,
-    rating: req.body.rating, // "up" or "down"
-  }, res);
+// The website sends "up" / "down". The router wants 1 (helpful) / -1 (not helpful).
+const RATINGS = { up: 1, down: -1 };
+
+app.post("/feedback", requireLogin, (req, res) => {
+  const requestId = req.body?.requestId; // which answer is being rated (from the /v1/chat reply)
+  const rating = RATINGS[req.body?.rating];
+  if (typeof requestId !== "string" || !requestId || !rating) {
+    return res.status(400).json({ error: 'Feedback needs a requestId and a rating of "up" or "down".' });
+  }
+  forwardToRouter("/v1/feedback", { request_id: requestId, rating }, res);
 });
 
 app.listen(PORT, () => {

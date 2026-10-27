@@ -5,7 +5,7 @@ Guidance for Claude Code when working in this project. The source spec is `Test 
 ## Project at a glance
 
 - **What:** A duo school project with a **1 week deadline**.
-- **Partner's part:** the main AI router service that exposes `POST /v1/chat` (probably Python). **Not built here.**
+- **Partner's part:** the main AI router service ("Lumen") at **https://lumen-roan-two.vercel.app**, with `POST /v1/chat` and `POST /v1/feedback`. Its API docs are on that site under Docs (`test1ref.webp` is a screenshot of the chat section). **Not built here.** Tenant A's key for it lives only in `server/.env.tenantA` and the Render dashboard. Tenant B has no real key yet and still uses the mock router.
 - **My part (this repo):** ONLY the **test website** from the PDF. It is a fake business with a small chatbot that uses the partner's service the way a paying customer would. It never talks to an LLM directly.
 - The test website has three jobs:
   1. Prove the whole customer path works: sign in, upload documents, get a key, chat.
@@ -64,7 +64,7 @@ aiclassproj/
 │       ├── App.jsx           # routes + shared Navbar/Footer layout
 │       ├── App.css           # global styles, .btn classes
 │       ├── tenantConfig.js   # ALL branding/text for Tenant A and B
-│       ├── chatService.js    # the ONLY place chat replies come from (fake now)
+│       ├── chatService.js    # the ONLY place that calls /api/chat and /api/feedback
 │       ├── homeContent.js    # Home page data per tenant: dates, topics, steps, FAQs, contact
 │       ├── authService.js    # the ONLY place that calls /auth/*: signup, login, logout, getCurrentUser, validateSignup
 │       ├── weatherService.js # the ONLY place weather is loaded (free Open-Meteo API, no key)
@@ -121,8 +121,8 @@ Example `server/.env.tenantA` (names are the plan, values are examples):
 
 ```
 PORT=4000
-ROUTER_API_URL=http://localhost:3000
-ROUTER_API_KEY=mock-key-tenant-a-bagwis
+ROUTER_API_URL=https://lumen-roan-two.vercel.app
+ROUTER_API_KEY=<the partner's key for Tenant A: only in this file and in Render>  # (mock: http://localhost:3000 + mock-key-tenant-a-bagwis)
 BRAND_NAME=Bagwis University Help Desk
 BRAND_PRIMARY_COLOR="#1B2A4A"
 BRAND_ACCENT_COLOR="#D4AF37"
@@ -146,7 +146,8 @@ DB_PATH=data/tenantA.db
 - Emails are trimmed and lowercased. Login errors are always "Incorrect email or password." (never say which one was wrong).
 - The sign-up rules live in two places that must match: `validateSignup` in `server/auth.js` (the one that counts) and in `client/src/authService.js` (for instant messages next to each field).
 - The client is gated in `App.jsx`: logged out → only `/login` and `/signup`, and everything else (including `/chat`) redirects to `/login`. Home shows "Welcome, <name>!", and so does the Navbar, with a Log out button.
-- Not done yet: backend `/chat` and `/feedback` don't require a login, and there's no rate limit on `/auth/login`.
+- Backend `/chat` and `/feedback` require a login (`requireLogin` in `auth.js`), because every router call costs real money and the backend is public once hosted.
+- Not done yet: there's no rate limit on `/auth/login` or `/chat`.
 
 Tenant B's orange is `#C2410C` in the client (dark enough for white text to stay readable). `server/.env.tenantB` still says `#F97316`.
 
@@ -164,8 +165,8 @@ Tenant B's orange is `#C2410C` in the client (dark enough for white text to stay
 | Route | What it does |
 |---|---|
 | `GET /config` | Returns branding from `.env` (name, colors, logo). No secrets |
-| `POST /chat` | Body `{ query, sessionId }`. Forwards to `${ROUTER_API_URL}/v1/chat` with header `x-api-key`, body `{ query, session_id }` |
-| `POST /feedback` | Body `{ sessionId, query, rating: "up"\|"down" }`. Forwards to `${ROUTER_API_URL}/v1/feedback` as `{ session_id, query, rating }` |
+| `POST /chat` | **Login required.** Body `{ query, sessionId }` (query 1 to 2000 chars, else 400). Forwards to `${ROUTER_API_URL}/v1/chat` with header `x-api-key`, body `{ query, session_id }`, and passes the reply back |
+| `POST /feedback` | **Login required.** Body `{ requestId, rating: "up"\|"down" }` (else 400). Forwards to `${ROUTER_API_URL}/v1/feedback` as `{ request_id, rating: 1\|-1 }`. 204 with no body on success |
 | `POST /auth/signup` | Body `{ fullName, email, password, confirmPassword }`. 201 `{ ok }`, or 400 `{ errors: { field: message } }` |
 | `POST /auth/login` | Body `{ email, password }`. 200 `{ user: { name, email } }` and sets the cookie, or 401 `{ error }` |
 | `GET /auth/me` | `{ user }`, or `{ user: null }` if logged out |
@@ -181,7 +182,7 @@ If the router can't be reached, the backend returns 502 `{ error }`.
 ## Hosting (free)
 
 - **Vercel:** two projects from the same repo, root `client`: `bagwis-helpdesk` (`npm run build:a`, `BACKEND_URL` = backend A) and `kahonko-support` (`npm run build:b`, `BACKEND_URL` = backend B).
-- **Render:** `render.yaml` blueprint → `ragtester-mock-router`, `ragtester-backend-a`, `ragtester-backend-b` (free, Singapore). The mock keys are random (`generateValue`) and copied into each backend's `ROUTER_API_KEY` with `fromService`. `DB_URL` / `DB_AUTH_TOKEN` are `sync: false` (pasted in the dashboard).
+- **Render:** `render.yaml` blueprint → `ragtester-mock-router`, `ragtester-backend-a`, `ragtester-backend-b` (free, Singapore). Backend A uses the partner's router: `ROUTER_API_URL` is in the file, and `ROUTER_API_KEY` is `sync: false` (pasted in the dashboard). Backend B uses the mock: its random key (`generateValue`) is copied in with `fromService`. `DB_URL` / `DB_AUTH_TOKEN` are `sync: false` (pasted in the dashboard).
 - **Turso:** one database per tenant, each with its own token.
 - Step-by-step click guide: README → "Host it online".
 
@@ -189,19 +190,23 @@ If the router can't be reached, the backend returns 502 `{ error }`.
 
 - Message list (using `MessageBubble`), input box, loading state while waiting.
 - **Sources shown under each answer.**
-- Thumbs up / down buttons on each answer, which call `/feedback`.
+- Thumbs up / down buttons on each answer, which call `/feedback` with that answer's `requestId` (the router's `request_id`).
+- Sources are numbered `[1]`, `[2]`... in the order the router sends them, matching the `[1]` citations in the answer. The router gives only `document_id` (a UUID, shown shortened), `chunk_id` and `score`. It has no document names and no passage text.
 - A `sessionId` generated once per browser visit (`getSessionId()` in `chatService.js`, using `sessionStorage`) and sent with every question.
-- Pages and components never call `fetch` directly. They use `sendMessage` / `sendFeedback` from `chatService.js`. Right now the answers come from a **fake** `getAnswer`. The real `fetch` versions are written in a comment at the bottom of that file, ready to swap in.
+- Pages and components never call `fetch` directly. They use `sendMessage` / `sendFeedback` from `chatService.js`, which call `/api/chat` and `/api/feedback`.
 - `sendMessage` **always** returns a non-empty reply and never throws. It answers small talk (hi, thanks, bye, kumusta, salamat) itself without calling the backend. Empty answers become the tenant's `notFoundReply`, and errors and timeouts (30 s) become `errorReply`. All of these texts live in `tenantConfig.js`. Greetings and error replies have no thumbs buttons.
 
 ## Mock router (`mock-router/`)
 
-Until the partner's service is ready, `mock-router` pretends to be it:
-- Runs on `http://localhost:3000` with `POST /v1/chat` and `POST /v1/feedback`.
+`mock-router` pretends to be the partner's service (used by Tenant B, and for offline testing):
+- Runs on `http://localhost:3000` with `POST /v1/chat` and `POST /v1/feedback`, using the **same shapes as the real router**:
+  - chat reply: `{ request_id, answer: "... [1]", sources: [{ document_id, chunk_id, score }], route: { model_tier, k, difficulty, escalated, top_score }, usage: { tokens_in, tokens_out, cost_usd, latency_ms } }`
+  - feedback: `{ request_id, rating: 1 | -1 }`, answered with 204 and no body
+  - errors: `{ error: { code, message } }`, e.g. 401 `invalid_api_key`, 422 `invalid_request` (query empty or over 2000 characters). The real router also returns 404 `not_found`, 429 `rate_limited` / `monthly_limit` / `provider_rate_limited`, and 502 `provider_error`.
 - Checks `x-api-key`: missing or unknown key → 401. Locally it knows two fake keys: `mock-key-tenant-a-bagwis` (tenantA) and `mock-key-tenant-b-kahonko` (tenantB). Hosted (`NODE_ENV=production`) it only accepts `MOCK_KEY_TENANT_A` / `MOCK_KEY_TENANT_B` from Render, because the local keys are public in the repo. Uses `PORT` if set (Render).
-- Right now it returns a fake answer plus fake `sources`, each tagged with the tenant id. Later (Day 5) it can search **only that tenant's** files in `documents/`.
-- The response shape (`answer`, `sources`, ...) is **a guess. Confirm it with the partner** and keep the mock matching their real API.
-- Switching to the real service should only mean changing `ROUTER_API_URL` / `ROUTER_API_KEY` in the `.env` files.
+- It returns a fake answer, and its `document_id`s start with the tenant id (`tenantB-fake-document-1`) so isolation tests can check them. Later (Day 5) it can search **only that tenant's** files in `documents/`.
+- Keep the mock matching the real API (shapes confirmed from the partner's docs on 2026-10-27).
+- Switching a tenant to the real service only means changing `ROUTER_API_URL` / `ROUTER_API_KEY` (`.env` file locally, Render dashboard when hosted).
 
 ## Documents (from the PDF)
 
@@ -232,7 +237,10 @@ cd server; npm run start:b
 
 # Quick test (curl.exe, not curl, because plain curl is a PowerShell alias)
 curl.exe http://localhost:4000/health     # {"ok":true,"tenant":"tenantA"}
-curl.exe -X POST http://localhost:4000/chat -H "Content-Type: application/json" -d '{\"query\": \"When does enrollment close?\", \"sessionId\": \"test-1\"}'
+# /chat needs a login now, so test it in PowerShell with a session (use an account you made on /signup):
+$s = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-RestMethod -Method Post http://localhost:4000/auth/login -WebSession $s -ContentType "application/json" -Body '{"email":"you@example.com","password":"your-password"}'
+Invoke-RestMethod -Method Post http://localhost:4000/chat -WebSession $s -ContentType "application/json" -Body '{"query":"When does enrollment close?","sessionId":"test-1"}'
 
 # 3. React site → open http://localhost:5173 (Tenant A) or http://localhost:5174 (Tenant B)
 #    Login/signup needs that tenant's backend (step 2) running too.
